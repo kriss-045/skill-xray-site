@@ -55,7 +55,9 @@ h1{position:relative;font-size:var(--t1);line-height:1.06;letter-spacing:-.035em
 .install .row{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;padding:18px 20px}
 .install .row+.row{border-top:1px solid var(--line)}
 .install .where{display:block;color:var(--ink4);font:var(--t3)/1.4 var(--sans);margin-bottom:6px}
-.install code{font:var(--t3)/1.65 var(--mono);color:var(--ink2);overflow-wrap:anywhere}
+.install code{font:var(--t3)/1.65 var(--mono);color:var(--ink2)}
+/* a command must never split inside a token: each one is kept whole, lines break only at spaces and after slashes */
+.install code b{font-weight:inherit;white-space:nowrap}
 .install code em{font-style:normal;color:var(--ink)}
 .copy{background:var(--c-work);color:#0a0a0a;border:0;border-radius:6px;height:34px;padding:0 14px;font:600 var(--t3)/1 var(--sans);cursor:pointer;transition:background .15s ease}
 .copy:hover{background:#fcd34d}
@@ -128,11 +130,11 @@ footer .links a{text-decoration:none}
 
     <div class="install">
       <div class="row">
-        <div><span class="where">In your terminal</span><code id="cmd">mkdir -p ~/.claude/skills &amp;&amp; curl -sL https://github.com/kriss-045/agent-skills/archive/main.tar.gz | tar -xz -C ~/.claude/skills --strip-components=2 <em>agent-skills-main/skills/skill-xray</em></code></div>
+        <div><span class="where">In your terminal</span><code id="cmd">mkdir <b>-p</b> <b>~/.claude/</b><wbr><b>skills</b> &amp;&amp; curl <b>-sL</b> <b>https://github.com/</b><wbr><b>kriss-045/</b><wbr><b>agent-skills/</b><wbr><b>archive/</b><wbr><b>main.tar.gz</b> | tar <b>-xz</b> <b>-C</b> <b>~/.claude/</b><wbr><b>skills</b> <b>--strip-components=2</b> <em><b>agent-skills-main/</b><wbr><b>skills/</b><wbr><b>skill-xray</b></em></code></div>
         <button class="copy" type="button" data-copy="cmd">Copy</button>
       </div>
       <div class="row">
-        <div><span class="where">Then in Claude Code</span><code id="ask"><em>x-ray the skill at ~/.claude/skills/my-skill</em></code></div>
+        <div><span class="where">Then in Claude Code</span><code id="ask"><em><b>x-ray</b> the skill at <b>~/.claude/</b><wbr><b>skills/</b><wbr><b>my-skill</b></em></code></div>
         <button class="copy" type="button" data-copy="ask">Copy</button>
       </div>
     </div>
