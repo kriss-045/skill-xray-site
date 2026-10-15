@@ -3,132 +3,108 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>skill-xray: an x-ray viewer for Claude Code skills</title>
-<meta name="description" content="skill-xray is a Claude Code skill that opens any Agent Skill as an interactive page: hover a line to see what it causes and the edit that changes it.">
+<title>skill-xray: see what every line of your skill does</title>
+<meta name="description" content="skill-xray is a Claude Code skill that opens any Agent Skill as a page you can point at: each part says what it causes and the words that change it.">
 <meta property="og:title" content="skill-xray: see what every line of your skill does">
-<meta property="og:description" content="A Claude Code skill that turns any Agent Skill into an interactive x-ray: what each part causes, the exact edit, and a 20 point checklist.">
+<meta property="og:description" content="A Claude Code skill that opens any Agent Skill as a page you can point at: what each part causes, the exact edit, and a 20 point checklist.">
 <meta property="og:image" content="https://kriss-045.github.io/skill-xray-site/assets/og.png">
 <meta property="og:url" content="https://kriss-045.github.io/skill-xray-site/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#0a0a0a">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <style>
-  :root{
-    /* tokens taken from the skill-xray viewer template */
-    --bg:#0a0a0a; --raise:#121212; --line:#1f1f1f; --line2:#2a2a2a;
-    --ink:#ededed; --ink2:#9f9f9f; --ink3:#707070;
-    --accent:#fbbf24;
-    --c-start:#3b82f6; --c-stop:#fb923c; --c-work:#fbbf24; --c-door:#a78bfa; --c-broken:#f87171; --c-dead:#5f5f5f;
-    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
-    --sans:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
-  }
-  *{box-sizing:border-box}
-  html{color-scheme:dark;-webkit-text-size-adjust:100%}
-  body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
-  a{color:inherit}
-  img{display:block;max-width:100%;height:auto}
-  h1,h2,h3{margin:0;text-wrap:balance;font-weight:600}
-  p{margin:0}
-  code,pre{font-family:var(--mono)}
-  .wrap{max-width:1200px;margin:0 auto;padding:0 32px}
-  .narrow{max-width:720px;margin:0 auto}
+:root{
+  /* every token is the skill-xray viewer's own (skill-xray/references/xray.html) */
+  --bg:#0a0a0a; --card:#0e0e0e; --card2:#121212; --line:#1f1f1f; --line2:#333;
+  --ink:#ededed; --ink2:#9f9f9f; --ink4:#707070;
+  --c-start:#3b82f6; --c-stop:#fb923c; --c-work:#fbbf24; --c-door:#a78bfa; --c-broken:#f87171; --c-dead:#5f5f5f;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+  --sans:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  /* three text sizes on the whole page */
+  --t1:clamp(38px,4.6vw,60px); --t2:17px; --t3:14px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{color-scheme:dark;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:var(--t2)/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+img{display:block;max-width:100%;height:auto}
+h1,h2{margin:0;font-weight:600;text-wrap:balance}
+p{margin:0}
+.wrap{max-width:1200px;margin:0 auto;padding:0 32px}
 
-  /* nav */
-  nav{display:flex;align-items:center;justify-content:space-between;height:64px}
-  .mark{font:600 15px/1 var(--mono);text-decoration:none;display:flex;align-items:center;gap:10px}
-  .mark svg{flex:none}
-  .links{display:flex;gap:28px;font-size:15px}
-  .links a{color:var(--ink2);text-decoration:none}
-  .links a:hover{color:var(--ink)}
+nav{display:flex;align-items:center;justify-content:space-between;height:72px;font-size:var(--t3)}
+.mark{font:600 var(--t3)/1 var(--mono);text-decoration:none;display:flex;align-items:center;gap:10px}
+.links{display:flex;gap:28px}
+.links a{color:var(--ink2);text-decoration:none}
+.links a:hover{color:var(--ink)}
 
-  /* hero */
-  .hero{padding:64px 0 0;text-align:center}
-  h1{font:600 clamp(32px,5.2vw,60px)/1.08 var(--mono);letter-spacing:-.03em}
-  .sub{margin:24px auto 0;max-width:620px;color:var(--ink2);font-size:19px}
-  .install{margin:40px auto 0;max-width:760px;display:flex;align-items:stretch;gap:8px}
-  .cmd{flex:1;min-width:0;display:flex;align-items:center;background:var(--raise);border:1px solid var(--line2);border-radius:6px;padding:0 16px;overflow-x:auto;white-space:nowrap;text-align:left}
-  .cmd code{font-size:13.5px;color:var(--ink2);padding:14px 0}
-  .cmd code b{color:var(--ink);font-weight:400}
-  .btn{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--accent);color:#0a0a0a;border:0;border-radius:6px;padding:0 20px;min-height:48px;font:600 15px/1 var(--sans);cursor:pointer;text-decoration:none;transition:background .15s ease-out}
-  .btn:hover{background:#fcd34d}
-  .btn:focus-visible,.cmd:focus-visible,a:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-  .btn.done{background:var(--ink)}
-  .friction{margin-top:14px;font-size:15px;color:var(--ink3)}
-  .friction a{color:var(--ink2);text-underline-offset:3px}
-  .shot{margin:56px auto 0;border:1px solid var(--line2);border-radius:10px;overflow:hidden;background:#0e0e0e}
-  .shot img{width:100%}
-  .hero .shot{animation:rise .28s ease-out both}
-  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-  @media (prefers-reduced-motion:reduce){.hero .shot{animation:none}}
-  .under{margin-top:16px;font-size:15px;color:var(--ink3);text-align:center}
-  .under a{color:var(--ink2);text-underline-offset:3px}
+/* hero: left aligned; the headline carries one real x-ray mark you can point at */
+.hero{padding:64px 0 0;max-width:820px}
+h1{position:relative;font-size:var(--t1);line-height:1.06;letter-spacing:-.035em}
+.x{position:relative;display:inline-block;border:1.5px solid var(--c-work);border-radius:8px;padding:0 .12em;cursor:default;outline:none;transition:background .15s ease}
+.x:hover,.x:focus-visible,.x.on{background:color-mix(in srgb,var(--c-work) 14%,transparent)}
+.x::after,.x::before{position:absolute;left:0;opacity:0;transform:translateY(-4px);pointer-events:none;transition:opacity .15s ease,transform .15s ease;z-index:2;letter-spacing:0;text-align:left}
+.x::after{content:attr(data-body);top:calc(100% + 12px);width:340px;background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:38px 16px 14px;font:400 var(--t3)/1.5 var(--sans);color:var(--ink)}
+.x::before{content:attr(data-head);top:calc(100% + 27px);margin-left:17px;font:var(--t3)/1.4 var(--mono);color:var(--ink4);z-index:3;white-space:nowrap}
+.x:hover::after,.x:focus-visible::after,.x.on::after,.x:hover::before,.x:focus-visible::before,.x.on::before{opacity:1;transform:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.sub{margin-top:28px;max-width:600px;color:var(--ink2)}
 
-  section{padding:136px 0 0}
-  h2{font-size:clamp(26px,3vw,34px);line-height:1.2;letter-spacing:-.015em}
-  .lede{margin-top:16px;color:var(--ink2);max-width:640px}
+/* install: the two things you type, in order */
+.install{margin-top:40px;max-width:760px;background:var(--card);border:1px solid var(--line);border-radius:10px}
+.install .row{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;padding:18px 20px}
+.install .row+.row{border-top:1px solid var(--line)}
+.install .where{display:block;color:var(--ink4);font:var(--t3)/1.4 var(--sans);margin-bottom:6px}
+.install code{font:var(--t3)/1.65 var(--mono);color:var(--ink2);overflow-wrap:anywhere}
+.install code em{font-style:normal;color:var(--ink)}
+.copy{background:var(--c-work);color:#0a0a0a;border:0;border-radius:6px;height:34px;padding:0 14px;font:600 var(--t3)/1 var(--sans);cursor:pointer;transition:background .15s ease}
+.copy:hover{background:#fcd34d}
+.copy.done{background:var(--ink)}
+.copy:focus-visible,a:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.free{margin-top:16px;font-size:var(--t3);color:var(--ink4)}
+.free a{color:var(--ink2);text-underline-offset:3px}
 
-  /* how it works */
-  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:48px;margin-top:56px;counter-reset:s}
-  .steps li{list-style:none}
-  .steps ol{margin:0;padding:0}
-  .steps h3{font:600 17px/1.4 var(--sans);display:flex;gap:12px;align-items:baseline}
-  .steps h3::before{counter-increment:s;content:counter(s);font:500 15px/1 var(--mono);color:var(--ink3)}
-  .steps p{margin-top:10px;color:var(--ink2)}
-  .steps code{font-size:.85em;color:var(--ink)}
+/* the exhibit: the real viewer, live */
+.exhibit{margin-top:72px}
+.frame{border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--bg);height:min(720px,78dvh)}
+.frame iframe{display:block;width:100%;height:100%;border:0}
+.still{display:none;border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+.legend{margin-top:16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;font-size:var(--t3);color:var(--ink4)}
+.legend mark{background:none;color:var(--ink2);border:1px solid var(--mc);border-radius:4px;padding:1px 6px;font:var(--t3)/1.4 var(--mono)}
+.legend .open{margin-left:auto;color:var(--ink2);text-underline-offset:3px}
 
-  /* feature rows */
-  .row{display:grid;grid-template-columns:5fr 7fr;gap:64px;align-items:center;margin-top:96px}
-  .row.flip{grid-template-columns:7fr 5fr}
-  .row.flip .txt{order:2}
-  .txt h3{font-size:24px;line-height:1.25;letter-spacing:-.01em}
-  .txt p{margin-top:14px;color:var(--ink2)}
-  .row .shot{margin:0}
+/* three things the page tells you */
+.tells{display:grid;grid-template-columns:repeat(3,1fr);gap:56px;margin-top:136px}
+.tells h2{font-size:var(--t2);line-height:1.4}
+.tells p{margin-top:8px;color:var(--ink2)}
+.tells code{font:var(--t3) var(--mono);color:var(--ink)}
 
-  /* colour excerpt: real lines from de-aification/SKILL.md */
-  .excerpt{margin:0;background:#0e0e0e;border:1px solid var(--line2);border-radius:10px;padding:24px;font-size:13.5px;line-height:1.75;white-space:pre-wrap;color:var(--ink2);overflow-x:auto}
-  .excerpt .ln{color:#3a3a3a;user-select:none;display:inline-block;width:2.4em}
-  mark{background:none;color:var(--ink);border:1px solid;border-radius:3px;padding:0 3px}
-  .m-start{border-color:var(--c-start)} .m-stop{border-color:var(--c-stop)} .m-work{border-color:var(--c-work)}
-  .m-door{border-color:var(--c-door)} .m-broken{border-color:var(--c-broken);text-decoration:line-through;text-decoration-color:var(--c-broken)}
-  .m-dead{border-color:var(--c-dead);color:var(--ink3)}
-  .legend{margin:20px 0 0;padding:0;list-style:none;display:grid;gap:8px;font-size:15px;color:var(--ink2)}
-  .legend li{display:flex;gap:12px;align-items:center}
-  .legend i{width:9px;height:9px;border-radius:2px;flex:none}
+footer{margin-top:160px;padding:32px 0 48px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;font-size:var(--t3);color:var(--ink4)}
+footer p{max-width:620px}
+footer a{color:var(--ink2);text-underline-offset:3px}
+footer .links a{text-decoration:none}
 
-  /* cost table */
-  .cost{width:100%;border-collapse:collapse;margin-top:24px;font-size:15px}
-  .cost td{padding:12px 0;vertical-align:top;color:var(--ink2)}
-  .cost tr+tr td{border-top:1px solid var(--line)}
-  .cost td:first-child{font-family:var(--mono);font-size:13.5px;color:var(--ink);width:38%;padding-right:16px}
-
-  /* not list */
-
-  .maker{display:flex;gap:20px;align-items:flex-start}
-  .maker img{width:48px;height:48px;border-radius:50%;flex:none}
-  .maker p{color:var(--ink2)}
-  .maker p strong{color:var(--ink);font-weight:500}
-
-  .close{text-align:center;padding:160px 0 0}
-  footer{margin-top:136px;border-top:1px solid var(--line);padding:28px 0 40px;font-size:15px;color:var(--ink3);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-  footer a{color:var(--ink2);text-decoration:none}
-  footer a:hover{color:var(--ink)}
-  .nw{white-space:nowrap}
-
-  @media (max-width:860px){
-    .wrap{padding:0 20px}
-    .links a.hide-m{display:none}
-    .hero{padding-top:40px}
-    .sub{font-size:17px;margin-top:18px}
-    .install{flex-direction:column;margin-top:28px}
-    .install .btn{width:100%}
-    .shot{margin-top:48px}
-    section{padding-top:88px}
-    .steps{grid-template-columns:1fr;gap:32px;margin-top:36px}
-    .row,.row.flip{grid-template-columns:1fr;gap:28px;margin-top:64px}
-    .row.flip .txt{order:0}
-    .close{padding-top:104px}
-    footer{margin-top:96px}
-  }
+@media (max-width:860px){
+  .wrap{padding:0 20px}
+  nav{height:60px}
+  .links{gap:20px}
+  .links .hide-m{display:none}
+  .hero{padding-top:44px}
+  .sub{margin-top:22px}
+  .x{position:static}
+  .x::after{width:100%}
+  .x::before{margin-left:17px}
+  .install{margin-top:32px}
+  .install .row{grid-template-columns:1fr;gap:12px;padding:16px}
+  .install .copy{justify-self:start}
+  .exhibit{margin-top:64px}
+  .frame{display:none}
+  .still{display:block}
+  .legend .open{margin-left:0;flex-basis:100%}
+  .tells{grid-template-columns:1fr;gap:36px;margin-top:88px}
+  footer{margin-top:104px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
@@ -146,134 +122,71 @@
   </nav>
 
   <header class="hero">
-    <div class="narrow">
-      <h1>See what every line of your skill does.</h1>
-      <p class="sub">skill-xray is a Claude Code skill that opens any Agent Skill as an interactive page. Hover a line to see what it causes and the exact edit that changes it.</p>
-    </div>
+    <h1>See what every <span class="x" tabindex="0" aria-describedby="tip" data-head="de-aification, lines 26 to 35" data-body="Pushes every output toward deliberate roughness. This is where the skill can make good work worse.">line</span> of your skill does.</h1>
+    <p class="sr" id="tip">In de-aification, lines 26 to 35 push every output toward deliberate roughness.</p>
+    <p class="sub">skill-xray opens any Claude Code skill as a page you can point at. Each part says what it causes, and which words to change to make it behave differently.</p>
+
     <div class="install">
-      <div class="cmd" tabindex="0" aria-label="Install command"><code id="cmd">mkdir -p ~/.claude/skills &amp;&amp; curl -sL https://github.com/kriss-045/agent-skills/archive/main.tar.gz | tar -xz -C ~/.claude/skills --strip-components=2 <b>agent-skills-main/skills/skill-xray</b></code></div>
-      <button class="btn copy" type="button" data-copy="cmd">Copy install command</button>
+      <div class="row">
+        <div><span class="where">In your terminal</span><code id="cmd">mkdir -p ~/.claude/skills &amp;&amp; curl -sL https://github.com/kriss-045/agent-skills/archive/main.tar.gz | tar -xz -C ~/.claude/skills --strip-components=2 <em>agent-skills-main/skills/skill-xray</em></code></div>
+        <button class="copy" type="button" data-copy="cmd">Copy</button>
+      </div>
+      <div class="row">
+        <div><span class="where">Then in Claude Code</span><code id="ask"><em>x-ray the skill at ~/.claude/skills/my-skill</em></code></div>
+        <button class="copy" type="button" data-copy="ask">Copy</button>
+      </div>
     </div>
-    <p class="friction">Free and open source. No account. Runs inside Claude Code. <a href="https://github.com/kriss-045/agent-skills/tree/main/skills/skill-xray">Read the source</a></p>
-    <a class="shot" href="demo/de-aification.html" style="display:block">
-      <picture>
-        <source media="(max-width:860px)" srcset="assets/hero-m.png">
-        <img src="assets/hero.png" width="2690" height="1280" alt="skill-xray showing the de-aification skill: its file tree on the left, SKILL.md in the middle with one section outlined in yellow, and a card beside it saying what that section causes and the edit that changes it">
-      </picture>
-    </a>
-    <p class="under">The real output for <a href="demo/de-aification.html">de-aification</a>, a public skill with 6 files. Open it and hover anything.</p>
+    <p class="free">Free and open source, no account. <a href="https://github.com/kriss-045/agent-skills/tree/main/skills/skill-xray">Read the source</a></p>
   </header>
 
-  <section id="how">
-    <h2>How it works</h2>
-    <ol class="steps">
-      <li><h3>Install the folder</h3><p>The line above copies <code>skill-xray</code> into <code>~/.claude/skills</code>. Claude Code finds it on the next session.</p></li>
-      <li><h3>Ask for an x-ray</h3><p>In any chat, say <code>x-ray the skill at ~/.claude/skills/my-skill</code>. A script measures the files, then Claude reads every line.</p></li>
-      <li><h3>Read the page</h3><p>Claude writes one HTML file and opens it in your browser. It works offline and keeps working if you email it.</p></li>
-    </ol>
-  </section>
-
-  <section id="what">
-    <h2>Your skill, read back to you</h2>
-    <p class="lede">The page is your own file, whole and line numbered. Nothing is summarised away. The notes only appear when you point at something.</p>
-
-    <div class="row">
-      <div class="txt">
-        <h3>Every section says what it causes</h3>
-        <p>Hover a section and a card names its effect in one sentence. Each dial under it asks a question you would ask while editing, like "Want it to fire more often?", and turns to show the exact words to change.</p>
-      </div>
-      <div class="shot"><img src="assets/card.png" width="2200" height="1120" loading="lazy" alt="A hovered section of de-aification's SKILL.md with its card: what the section causes, and dial rows that reveal the edit"></div>
-    </div>
-
-    <div class="row flip">
-      <div class="txt">
-        <h3>One colour, one meaning</h3>
-        <p>The words that make a skill fire, the ones that keep it quiet, the steps that shape the output and the pointers to other files each get their own colour, on the line itself. These are real lines from de-aification:</p>
-        <ul class="legend">
-          <li><i style="background:var(--c-start)"></i>blue starts it</li>
-          <li><i style="background:var(--c-stop)"></i>orange stops it</li>
-          <li><i style="background:var(--c-work)"></i>yellow is the work</li>
-          <li><i style="background:var(--c-door)"></i>purple opens another file</li>
-          <li><i style="background:var(--c-broken)"></i>red is broken</li>
-          <li><i style="background:var(--c-dead)"></i>gray costs tokens and changes nothing</li>
-        </ul>
-      </div>
-<pre class="excerpt"><code><span class="ln">3</span>Use when Kriss says <mark class="m-start">"de-aify this"</mark>, <mark class="m-start">"make this not sound like AI"</mark>, …
-<span class="ln"></span>Not for detecting whether <mark class="m-stop">text is AI for a verdict only</mark>
-
-<span class="ln">10</span><mark class="m-dead">Hook B3 (`~/.claude/hooks/claude-os-write-check.sh`) verifies this preamble is present</mark>
-
-<span class="ln">16</span>1. **Writing (prose, articles, emails, web copy)** → <mark class="m-door">`references/writing.md`</mark>
-
-<span class="ln">22</span><mark class="m-work">Open the matching file</mark>, walk its tells against the work, apply each listed fix.
-
-<span class="ln">24</span>Read <mark class="m-broken">`~/.claude/skills/kriss-writing-style/references/editing-his-own-drafts.md`</mark></code></pre>
-    </div>
-
-    <div class="row">
-      <div class="txt">
-        <h3>See when each file costs you</h3>
-        <p>Not every word in a skill is paid for at the same time. The file tree shows each file's size in tokens, and its tip says when you pay:</p>
-        <table class="cost">
-          <tr><td>description</td><td>every session, even when the skill never fires</td></tr>
-          <tr><td>SKILL.md body</td><td>once, when the skill fires</td></tr>
-          <tr><td>references/</td><td>only if the body sends Claude there</td></tr>
-        </table>
-        <p>A file the body never names is struck through: Claude can never reach it.</p>
-      </div>
-      <div class="shot"><img src="assets/tree.png" width="2200" height="1120" loading="lazy" alt="The file tree of de-aification with token figures per file"></div>
-    </div>
-
-    <div class="row flip">
-      <div class="txt">
-        <h3>A checklist, not a score</h3>
-        <p>Report mode runs 20 yes or no checks on the file and lists the three edits that would change the most. Each failed check names its line and jumps to it.</p>
-      </div>
-      <div class="shot"><img src="assets/report.png" width="1800" height="1120" loading="lazy" alt="Report mode: the checklist count, the three fix first edits and every check as a row"></div>
+  <section class="exhibit" aria-label="Live example">
+    <div class="frame"><iframe src="demo/de-aification.html" title="skill-xray of the de-aification skill, live" loading="lazy"></iframe></div>
+    <a class="still" href="demo/de-aification.html"><img src="assets/hero-m.png" width="1170" height="1896" alt="skill-xray on a phone: the de-aification skill with one section tapped and its card open under it"></a>
+    <div class="legend">
+      <mark style="--mc:var(--c-start)">starts it</mark>
+      <mark style="--mc:var(--c-stop)">stops it</mark>
+      <mark style="--mc:var(--c-work)">does the work</mark>
+      <mark style="--mc:var(--c-door)">opens a file</mark>
+      <mark style="--mc:var(--c-broken)">broken</mark>
+      <mark style="--mc:var(--c-dead)">costs tokens, changes nothing</mark>
+      <a class="open" href="demo/de-aification.html">The real x-ray of de-aification, full screen</a>
     </div>
   </section>
 
-  <section id="not">
-    <h2>What it does not do</h2>
-    <p class="lede">It doesn't grade your skill. The only number on the page is how many checks pass; for a score, use <a href="https://github.com/kriss-045/agent-skills/tree/main/skills/skill-reviewer-eval">skill-reviewer-eval</a>. It doesn't prove anything either: the cards are predictions from reading the file, and <a href="https://github.com/kriss-045/agent-skills/tree/main/skills/skill-test">skill-test</a> is what measures real output.</p>
-    <p class="lede">And nothing leaves your machine. The page is one file with no scripts, fonts or images from the network.</p>
-  </section>
-
-  <section id="maker">
-    <div class="narrow maker">
-      <img src="assets/kriss.jpg" width="96" height="96" alt="Kriss Patel">
-      <p><strong>Made by Kriss Patel</strong>, a senior product designer in Toronto who writes a lot of Claude Code skills. A score could tell me a skill was weak. It could not tell me which words to change, so I built the page that points at them. <span class="nw">Version 1, free.</span></p>
+  <section class="tells">
+    <div>
+      <h2>What each part causes</h2>
+      <p>Point at a section and a card says what it does to the output in one sentence, then the words to edit to make it fire more, fire less or do something else.</p>
     </div>
-  </section>
-
-  <section class="close">
-    <div class="narrow">
-      <h2>X-ray your first skill</h2>
-      <p class="lede" style="margin-left:auto;margin-right:auto">One line in your terminal, then ask Claude.</p>
+    <div>
+      <h2>When each file costs you</h2>
+      <p>The file tree shows every file in tokens. The <code>description</code> is paid every session, the body when the skill fires, references only when the body opens them.</p>
     </div>
-    <div class="install">
-      <div class="cmd" tabindex="0" aria-label="Install command"><code id="cmd2">mkdir -p ~/.claude/skills &amp;&amp; curl -sL https://github.com/kriss-045/agent-skills/archive/main.tar.gz | tar -xz -C ~/.claude/skills --strip-components=2 <b>agent-skills-main/skills/skill-xray</b></code></div>
-      <button class="btn copy" type="button" data-copy="cmd2">Copy install command</button>
+    <div>
+      <h2>What to fix first</h2>
+      <p>Report mode runs 20 yes or no checks and puts the three edits that change the most at the top. Each failed check jumps to its line.</p>
     </div>
-    <p class="friction">Free and open source. No account. Runs inside Claude Code.</p>
   </section>
 
   <footer>
-    <span>skill-xray by <a href="https://www.krisspatel.com">Kriss Patel</a></span>
-    <span><a href="https://github.com/kriss-045/agent-skills">All my skills on GitHub</a></span>
+    <p>Made by <a href="https://www.krisspatel.com">Kriss Patel</a>, a product designer in Toronto. A score could tell me a skill was weak, not which words to change, so I built the page that points at them. The page it writes is one offline HTML file; nothing leaves your machine.</p>
+    <div class="links">
+      <a href="https://github.com/kriss-045/agent-skills">All my skills</a>
+    </div>
   </footer>
 </div>
 <script>
-  document.querySelectorAll('.copy').forEach(function (b) {
-    b.addEventListener('click', function () {
-      var text = document.getElementById(b.dataset.copy).textContent;
-      var label = b.textContent;
-      navigator.clipboard.writeText(text).then(function () {
-        b.textContent = 'Copied'; b.classList.add('done');
-        setTimeout(function () { b.textContent = label; b.classList.remove('done'); }, 1600);
-      });
+document.querySelectorAll('.copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var text = document.getElementById(b.dataset.copy).textContent;
+    navigator.clipboard.writeText(text).then(function () {
+      b.textContent = 'Copied'; b.classList.add('done');
+      setTimeout(function () { b.textContent = 'Copy'; b.classList.remove('done'); }, 1600);
     });
   });
+});
+var x = document.querySelector('.x');
+x.addEventListener('click', function () { x.classList.toggle('on'); });
 </script>
 </body>
 </html>
