@@ -80,6 +80,9 @@
         transition:opacity .12s ease;background:var(--card2);border:1px solid var(--line2);
         border-radius:10px;padding:13px 15px;font-size:12.5px;color:var(--ink2);z-index:3}
   .region:hover>.card,.region:focus>.card,.region.pin>.card,.card.ghold{opacity:1;pointer-events:auto}
+  /* one card at a time (hard): once a section is pinned, every other section's card is
+     forced hidden, whether it got there by hover, focus or a lingering ghost-hold */
+  .main.has-pin .region:not(.pin)>.card{opacity:0!important;pointer-events:none!important}
   /* invisible bridge across the gap so the cursor can travel into the card without losing hover */
   .card::before{content:"";position:absolute;top:0;bottom:0;left:-22px;width:22px}
   .card .head{display:flex;align-items:baseline;gap:8px}
@@ -162,12 +165,28 @@
     .card{position:static;width:auto;display:none;margin:4px 4px 10px;opacity:1;pointer-events:auto}
     .region.pin>.card{display:block}
   }
+
+  /* under 860px the tree would fill the first screen and push the file below the fold:
+     collapse it behind one tappable row showing the current file name; tap expands it */
+  @media (max-width:860px){
+    .tree{display:none}
+    .side.open .tree{display:block}
+    .trbar{display:flex;align-items:center;gap:8px;width:100%;height:40px;padding:0 10px;
+           background:none;border:0;border-bottom:1px solid var(--line);color:var(--ink);
+           font:13px var(--sans);text-align:left;cursor:pointer}
+    .trbar svg{flex:none;width:12px;height:12px;stroke:var(--ink4);stroke-width:1.6;fill:none;
+               transition:transform .12s}
+    .side.open .trbar svg{transform:rotate(90deg)}
+    .trbar .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  }
+  @media (min-width:861px){ .trbar{display:none} }
 </style>
 </head>
 <body>
 <div class="app">
 <aside class="side">
 <div class="mode"><button id="mode-x" class="on">X-ray</button><button id="mode-r">Report <span class="fbadge">8</span></button></div>
+<button class="trbar" id="trbar" aria-label="Show the file list"><svg viewBox="0 0 16 16"><path d="M6 4l4 4-4 4"/></svg><span class="nm" id="trbar-nm">SKILL.md</span></button>
 <nav class="tree">
 <button class="trow drow" data-dir="root" style="--d:0"><svg class="chev" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4"/></svg><svg viewBox="0 0 16 16"><path d="M1.5 3.5h4l1.5 2h7.5v7a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-9z"/></svg><span class="nm">de-aification</span></button>
 <div class="kids" data-group="root" style="--g:16px">
@@ -369,6 +388,11 @@
 <script>
 (function(){
   var mob=function(){return window.innerWidth<=980};
+  var mob860=function(){return window.innerWidth<=860};
+  /* under-860px tree toggle: one row standing in for the tree; tap expands/collapses it */
+  var sideEl=document.querySelector('.side'),trbar=document.getElementById('trbar'),
+      trbarNm=document.getElementById('trbar-nm');
+  if(trbar) trbar.addEventListener('click',function(){ if(sideEl) sideEl.classList.toggle('open'); });
   /* tree */
   document.querySelectorAll('.drow').forEach(function(d){
     d.addEventListener('click',function(){
@@ -386,6 +410,8 @@
     rows.forEach(function(o){o.classList.remove('on')});b.classList.add('on');
     showPane('pane-'+b.dataset.pane); setMode(false);
     unpin(); window.scrollTo(0,0);
+    if(trbarNm){var nmEl=b.querySelector('.nm');trbarNm.textContent=nmEl?nmEl.textContent:'';}
+    if(mob860()&&sideEl) sideEl.classList.remove('open');
   })});
   /* mode toggle: report swaps the pane; x-ray restores the selected file */
   if(modeR){
@@ -401,7 +427,7 @@
       rows.forEach(function(o){o.classList.toggle('on',o.dataset.pane===p[0])});
       showPane('pane-'+p[0]); setMode(false);
       var reg=document.querySelectorAll('#pane-'+p[0]+' .region')[+p[1]];
-      if(reg){unpin();reg.classList.add('pin');pinned=reg;reg.scrollIntoView({block:'center'});}
+      if(reg){pinRegion(reg);reg.scrollIntoView({block:'center'});}
     });
   });
   /* sidebar token tips */
@@ -420,7 +446,12 @@
   /* state-based card hold: no timers. A summoned card keeps its place and size until another
      section is hovered, Esc is pressed, or the pointer leaves the reader column. */
   function dropHold(){if(hold){hold.classList.remove('ghold');hold.style.minHeight='';hold=null}}
-  function unpin(){regions.forEach(function(o){o.classList.remove('pin')});pinned=null}
+  function unpin(){regions.forEach(function(o){o.classList.remove('pin')});pinned=null;
+    if(mainEl) mainEl.classList.remove('has-pin');}
+  /* one card at a time (hard): pinning a section always clears any other card first,
+     ghost-held or genuinely hovered, so a jump never leaves two cards on screen */
+  function pinRegion(r){unpin();dropHold();r.classList.add('pin');pinned=r;
+    if(mainEl) mainEl.classList.add('has-pin');}
   var mainEl=document.querySelector('.main');
   if(mainEl) mainEl.addEventListener('mouseleave',function(){dropHold()});
   regions.forEach(function(r){
@@ -440,7 +471,7 @@
       if(card.contains(e.target)||e.target.closest('mark')) return;
       var was=r.classList.contains('pin');
       unpin();
-      if(!was) {r.classList.add('pin');pinned=r;}
+      if(!was) pinRegion(r);
     });
     r.addEventListener('keydown',function(e){
       if(e.key==='Enter'||e.key===' '){e.preventDefault();r.click();}
